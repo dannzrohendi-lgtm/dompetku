@@ -1,0 +1,17 @@
+{
+  "name": "Dompetku - Catatan Keuangan",
+  "short_name": "Dompetku",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f0f2f5",
+  "theme_color": "#2c3e50",
+  "description": "Aplikasi pencatat keuangan pribadi simpel dan offline.",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2652/2652234.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
