@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Pencatat Keuangan Pribadi</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background: rgb(10, 0, 0);
+            width: 100%;
+            max-width: 450px;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        h2 { text-align: center; color: #333; margin-top: 0; }
+        
+        .saldo-box {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .saldo-box h3 { margin: 0; font-size: 14px; opacity: 0.8; text-transform: uppercase; }
+        .saldo-box h1 { margin: 5px 0 0 0; font-size: 32px; }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .report-card {
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            color: white;
+        }
+        .bg-plus { background-color: #2ecc71; }
+        .bg-minus { background-color: #e74c3c; }
+        .report-card h4 { margin: 0; font-size: 12px; opacity: 0.9; }
+        .report-card p { margin: 5px 0 0 0; font-size: 18px; font-weight: bold; }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input, select, button {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: #2980b9; }
+
+        .history {
+            max-height: 200px;
+            overflow-y: auto;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        .history h3 { margin: 0 0 10px 0; font-size: 16px; color: #555; }
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            background: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            font-size: 14px;
+            border-left: 5px solid #ccc;
+        }
+        .list-item.plus { border-left-color: #2ecc71; }
+        .list-item.minus { border-left-color: #e74c3c; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Dompetku</h2>
+
+    <div class="saldo-box">
+        <h3>Sisa Saldo</h3>
+        <h1 id="total-saldo">Rp 0</h1>
+    </div>
+
+    <div class="report-grid">
+        <div class="report-card bg-plus">
+            <h4>Total Pemasukan</h4>
+            <p id="total-masuk">Rp 0</p>
+        </div>
+        <div class="report-card bg-minus">
+            <h4>Total Pengeluaran</h4>
+            <p id="total-keluar">Rp 0</p>
+        </div>
+    </div>
+
+    <form id="transaksi-form">
+        <input type="text" id="deskripsi" placeholder="Contoh: Gaji, Beli Kopi" required>
+        <input type="number" id="jumlah" placeholder="Jumlah (Rupiah)" required>
+        <select id="jenis">
+            <option value="plus">Pemasukan (+)</option>
+            <option value="minus">Pengeluaran (-)</option>
+        </select>
+        <button type="submit">Tambah Transaksi</button>
+    </form>
+
+    <div class="history">
+        <h3>Riwayat Transaksi</h3>
+        <div id="transaksi-list"></div>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('transaksi-form');
+    const list = document.getElementById('transaksi-list');
+    const totalSaldoEl = document.getElementById('total-saldo');
+    const totalMasukEl = document.getElementById('total-masuk');
+    const totalKeluarEl = document.getElementById('total-keluar');
+
+    // MENGAMBIL DATA LAMA: Jika ada data di localstorage, pakai itu. Jika kosong, pakai array kosong []
+    let daftarTransaksi = JSON.parse(localStorage.getItem('dataKeuangan')) || [];
+
+    function hitungKeuangan() {
+        let pemasukan = 0;
+        let pengeluaran = 0;
+
+        daftarTransaksi.forEach(transaksi => {
+            if (transaksi.jenis === 'plus') {
+                pemasukan += transaksi.jumlah;
+            } else {
+                pengeluaran += transaksi.jumlah;
+            }
+        });
+
+        let sisaSaldo = pemasukan - pengeluaran;
+
+        totalSaldoEl.innerText = 'Rp ' + sisaSaldo.toLocaleString('id-ID');
+        totalMasukEl.innerText = 'Rp ' + pemasukan.toLocaleString('id-ID');
+        totalKeluarEl.innerText = 'Rp ' + pengeluaran.toLocaleString('id-ID');
+    }
+
+    function perbaruiRiwayat() {
+        list.innerHTML = '';
+        daftarTransaksi.forEach(transaksi => {
+            const tanda = transaksi.jenis === 'plus' ? '+' : '-';
+            const kelasKustom = transaksi.jenis;
+            
+            const item = document.createElement('div');
+            item.classList.add('list-item', kelasKustom);
+            item.innerHTML = `
+                <span>${transaksi.deskripsi}</span>
+                <strong>${tanda} Rp ${transaksi.jumlah.toLocaleString('id-ID')}</strong>
+            `;
+            list.appendChild(item);
+        });
+    }
+
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const deskripsiInput = document.getElementById('deskripsi').value;
+        const jumlahInput = parseInt(document.getElementById('jumlah').value);
+        const jenisInput = document.getElementById('jenis').value;
+
+        const transaksiBaru = {
+            deskripsi: deskripsiInput,
+            jumlah: jumlahInput,
+            jenis: jenisInput
+        };
+
+        daftarTransaksi.unshift(transaksiBaru);
+
+        // MENYIMPAN DATA: Masukkan data terbaru ke dalam localStorage browser
+        localStorage.setItem('dataKeuangan', JSON.stringify(daftarTransaksi));
+
+        perbaruiRiwayat();
+        hitungKeuangan();
+
+        form.reset();
+    });
+
+    // Jalankan fungsi ini saat pertama kali halaman dibuka agar data lama langsung muncul
+    perbaruiRiwayat();
+    hitungKeuangan();
+</script>
+
+</body>
+</html>
