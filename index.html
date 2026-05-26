@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Pencatat Keuangan Pribadi</title>
+    <title>Dompetku - Catatan Keuangan</title>
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2652/2652234.png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2c3e50">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"></script>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f0f2f5;
@@ -18,15 +19,18 @@
             justify-content: center;
         }
         .container {
-            background: rgb(10, 0, 0);
+            background: rgb(255, 255, 255);
             width: 100%;
             max-width: 450px;
             padding: 25px;
             border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            box-shadow: 0 5px 15px rgba(0,0,0,0,08);
         }
-        h2 { text-align: center; color: #333; margin-top: 0; }
-        
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-top: 0;
+        }
         .saldo-box {
             background: #2c3e50;
             color: white;
@@ -35,9 +39,16 @@
             text-align: center;
             margin-bottom: 20px;
         }
-        .saldo-box h3 { margin: 0; font-size: 14px; opacity: 0.8; text-transform: uppercase; }
-        .saldo-box h1 { margin: 5px 0 0 0; font-size: 32px; }
-
+        .saldo-box h3 {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.8;
+            text-transform: uppercase;
+        }
+        .saldo-box h1 {
+            margin: 5px 0 0 0;
+            font-size: 32px;
+        }
         .report-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -54,7 +65,6 @@
         .bg-minus { background-color: #e74c3c; }
         .report-card h4 { margin: 0; font-size: 12px; opacity: 0.9; }
         .report-card p { margin: 5px 0 0 0; font-size: 18px; font-weight: bold; }
-
         form {
             display: flex;
             flex-direction: column;
@@ -75,8 +85,9 @@
             cursor: pointer;
             transition: background 0.2s;
         }
-        button:hover { background-color: #2980b9; }
-
+        button:hover {
+            background-color: #2980b9;
+        }
         .history {
             max-height: 200px;
             overflow-y: auto;
@@ -102,7 +113,7 @@
 
 <div class="container">
     <h2>Dompetku</h2>
-
+    
     <div class="saldo-box">
         <h3>Sisa Saldo</h3>
         <h1 id="total-saldo">Rp 0</h1>
@@ -111,18 +122,18 @@
     <div class="report-grid">
         <div class="report-card bg-plus">
             <h4>Total Pemasukan</h4>
-            <p id="total-masuk">Rp 0</p>
+            <p id="total-pemasukan">Rp 0</p>
         </div>
         <div class="report-card bg-minus">
             <h4>Total Pengeluaran</h4>
-            <p id="total-keluar">Rp 0</p>
+            <p id="total-pengeluaran">Rp 0</p>
         </div>
     </div>
 
     <form id="transaksi-form">
-        <input type="text" id="deskripsi" placeholder="Contoh: Gaji, Beli Kopi" required>
-        <input type="number" id="jumlah" placeholder="Jumlah (Rupiah)" required>
-        <select id="jenis">
+        <input type="text" id="deskripsi" placeholder="Nama transaksi (misal: Gaji, Makan siang)" required>
+        <input type="number" id="nominal" placeholder="Nominal (Rp)" required>
+        <select id="jenis" required>
             <option value="plus">Pemasukan (+)</option>
             <option value="minus">Pengeluaran (-)</option>
         </select>
@@ -131,82 +142,82 @@
 
     <div class="history">
         <h3>Riwayat Transaksi</h3>
-        <div id="transaksi-list"></div>
+        <div id="riwayat-list"></div>
     </div>
 </div>
 
 <script>
     const form = document.getElementById('transaksi-form');
-    const list = document.getElementById('transaksi-list');
-    const totalSaldoEl = document.getElementById('total-saldo');
-    const totalMasukEl = document.getElementById('total-masuk');
-    const totalKeluarEl = document.getElementById('total-keluar');
+    const list = document.getElementById('riwayat-list');
+    const totalSaldo = document.getElementById('total-saldo');
+    const totalPemasukan = document.getElementById('total-pemasukan');
+    const totalPengeluaran = document.getElementById('total-pengeluaran');
 
-    // MENGAMBIL DATA LAMA: Jika ada data di localstorage, pakai itu. Jika kosong, pakai array kosong []
-    let daftarTransaksi = JSON.parse(localStorage.getItem('dataKeuangan')) || [];
+    // Mengambil data dari memori HP lokal (localStorage)
+    let transaksi = JSON.parse(localStorage.getItem('dompetku_data')) || [];
 
-    function hitungKeuangan() {
+    function formatRupiah(angka) {
+        return 'Rp ' + parseFloat(angka).toLocaleString('id-ID');
+    }
+
+    function updateSistem() {
+        list.innerHTML = '';
         let pemasukan = 0;
         let pengeluaran = 0;
 
-        daftarTransaksi.forEach(transaksi => {
-            if (transaksi.jenis === 'plus') {
-                pemasukan += transaksi.jumlah;
+        transaksi.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.classList.add('list-item', item.jenis);
+            
+            const simbol = item.jenis === 'plus' ? '+' : '-';
+            div.innerHTML = `
+                <span>${item.deskripsi}</span>
+                <strong>${simbol} ${formatRupiah(item.nominal)}</strong>
+            `;
+            list.appendChild(div);
+
+            if(item.jenis === 'plus') {
+                pemasukan += parseFloat(item.nominal);
             } else {
-                pengeluaran += transaksi.jumlah;
+                pengeluaran += parseFloat(item.nominal);
             }
         });
 
-        let sisaSaldo = pemasukan - pengeluaran;
+        const saldoAkhir = pemasukan - pengeluaran;
 
-        totalSaldoEl.innerText = 'Rp ' + sisaSaldo.toLocaleString('id-ID');
-        totalMasukEl.innerText = 'Rp ' + pemasukan.toLocaleString('id-ID');
-        totalKeluarEl.innerText = 'Rp ' + pengeluaran.toLocaleString('id-ID');
+        totalSaldo.innerText = formatRupiah(saldoAkhir);
+        totalPemasukan.innerText = formatRupiah(pemasukan);
+        totalPengeluaran.innerText = formatRupiah(pengeluaran);
+
+        // Simpan data terbaru ke memori HP
+        localStorage.setItem('dompetku_data', JSON.stringify(transaksi));
     }
 
-    function perbaruiRiwayat() {
-        list.innerHTML = '';
-        daftarTransaksi.forEach(transaksi => {
-            const tanda = transaksi.jenis === 'plus' ? '+' : '-';
-            const kelasKustom = transaksi.jenis;
-            
-            const item = document.createElement('div');
-            item.classList.add('list-item', kelasKustom);
-            item.innerHTML = `
-                <span>${transaksi.deskripsi}</span>
-                <strong>${tanda} Rp ${transaksi.jumlah.toLocaleString('id-ID')}</strong>
-            `;
-            list.appendChild(item);
-        });
-    }
-
-    form.addEventListener('submit', function(event) {
-        event.preventDefault();
-
-        const deskripsiInput = document.getElementById('deskripsi').value;
-        const jumlahInput = parseInt(document.getElementById('jumlah').value);
-        const jenisInput = document.getElementById('jenis').value;
-
-        const transaksiBaru = {
-            deskripsi: deskripsiInput,
-            jumlah: jumlahInput,
-            jenis: jenisInput
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const dataBaru = {
+            deskripsi: document.getElementById('deskripsi').value,
+            nominal: document.getElementById('nominal').value,
+            jenis: document.getElementById('jenis').value
         };
 
-        daftarTransaksi.unshift(transaksiBaru);
-
-        // MENYIMPAN DATA: Masukkan data terbaru ke dalam localStorage browser
-        localStorage.setItem('dataKeuangan', JSON.stringify(daftarTransaksi));
-
-        perbaruiRiwayat();
-        hitungKeuangan();
-
+        transaksi.push(dataBaru);
+        updateSistem();
         form.reset();
     });
 
-    // Jalankan fungsi ini saat pertama kali halaman dibuka agar data lama langsung muncul
-    perbaruiRiwayat();
-    hitungKeuangan();
+    // Jalankan sistem saat pertama kali dibuka
+    updateSistem();
+
+    // Registrasi Service Worker PWA Biar Bisa Didownload & Offline
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('PWA Siap!', reg))
+                .catch(err => console.log('PWA Gagal', err));
+        });
+    }
 </script>
 
 </body>
